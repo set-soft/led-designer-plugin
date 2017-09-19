@@ -1,0 +1,21 @@
+Source: qtled-designer-plugin-src
+Section: libs
+Priority: optional
+Maintainer: Salvador Eduardo Tropea <salvador@inti.gob.ar>
+Build-Depends: debhelper (>= 9),
+               dpkg-dev (>= 1.16.1),
+               qtbase5-dev
+Standards-Version: 3.9.8
+Homepage: https://www.ics.com/blog/integrating-custom-widget-qt-designer
+Vcs-Git: https://github.com/set-soft/led-designer-plugin.git
+
+Package: qtled-designer-plugin
+Architecture: any
+Multi-Arch: same
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Qt 5 LED plugin for designer
+ Qt is a cross-platform C++ application framework. Qt's primary feature
+ is its rich set of widgets that provide standard GUI functionality.
+ .
+ This package contains a plugins for a LED widget
