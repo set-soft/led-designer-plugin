@@ -7,21 +7,42 @@
 
 #include "LED.h"
 
+///Returns the class name of the custom widget.
+const char* GetScriptCommunicatorWidgetName(void)
+{
+    return "LED";
+}
+
+/**
+* Creates the wrapper classe
+* @param scriptThread
+*      Pointer to the script thread.
+* @param customWidget
+*      The custom widget.
+* @param scriptRunsInDebugger
+*       True if the script thread runs in a script debugger.
+*/
+QObject *CreateScriptCommunicatorWidget(QObject *scriptThread, QWidget *customWidget, bool scriptRunsInDebugger)
+{
+    return new ScriptLed(scriptThread, customWidget, scriptRunsInDebugger);
+}
 LED::
 LED(QWidget* parent) :
 	QWidget(parent),
-	diameter_(5),
-	color_(QColor("red")),
-	alignment_(Qt::AlignCenter),
-	initialState_(true),
+    m_diameter(8),
+    m_color(QColor("red")),
+    m_alignment(Qt::AlignCenter),
+    m_initialState(true),
 	state_(true),
-	flashRate_(200),
-	flashing_(false)
+    m_alphaForOff(80),
+    m_flashRate(200),
+    m_flashing(false)
 {
-	timer_ = new QTimer(this);
-	connect(timer_, SIGNAL(timeout()), this, SLOT(toggleState()));
+    m_timer = new QTimer(this);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(toggleState()));
 
-    setDiameter(diameter_);
+    setDiameter(m_diameter);
+
 }
 
 LED::
@@ -29,23 +50,22 @@ LED::
 {
 }
 
-
 double LED::
 diameter() const
 {
-	return diameter_;
+    return m_diameter;
 }
 
 void LED::
 setDiameter(double diameter)
 {
-	diameter_ = diameter;
+    m_diameter = diameter;
 
-	pixX_ = round(double(height())/heightMM());
-	pixY_ = round(double(width())/widthMM());
+    m_pixX = round(double(height())/heightMM());
+    m_pixY = round(double(width())/widthMM());
 
-	diamX_ = diameter_*pixX_;
-	diamY_ = diameter_*pixY_;
+    m_diamX = m_diameter*m_pixX;
+    m_diamY = m_diameter*m_pixY;
 
 	update();
 }
@@ -54,26 +74,26 @@ setDiameter(double diameter)
 QColor LED::
 color() const
 {
-	return color_;
+    return m_color;
 }
 
 void LED::
-setColor(const QColor& color)
+setColor(QColor color)
 {
-	color_ = color;
+    m_color = color;
 	update();
 }
 
 Qt::Alignment LED::
 alignment() const
 {
-	return alignment_;
+    return m_alignment;
 }
 
 void LED::
 setAlignment(Qt::Alignment alignment)
 {
-	alignment_ = alignment;
+    m_alignment = alignment;
 
 	update();
 }
@@ -81,23 +101,23 @@ setAlignment(Qt::Alignment alignment)
 void LED::
 setFlashRate(int rate)
 {
-	flashRate_ = rate;
-
+    m_flashRate = rate;
 	update();
 }
 
 void LED::
 setFlashing(bool flashing)
 {
-	flashing_ = flashing;
-
+    m_flashing = flashing;
 	update();
+
 }
 
 void LED::
 startFlashing()
 {
 	setFlashing(true);
+    //emit setFlashingeSignal(true);
 }
 
 void LED::
@@ -112,13 +132,21 @@ setState(bool state)
 {
 	state_ = state;
 	update();
+    //emit toggleStateSignal();
+}
+
+
+void LED::setAlphaForOff(int value)
+{
+    m_alphaForOff = value;
 }
 
 void LED::
 toggleState()
 {
 	state_ = !state_;
-	update();
+    update();
+    emit stateChangedSignal(state_);
 }
 
 int LED::
@@ -130,13 +158,13 @@ heightForWidth(int width) const
 QSize LED::
 sizeHint() const
 {
-	return QSize(diamX_, diamY_);
+    return QSize(m_diamX, m_diamY);
 }
 
 QSize LED::
 minimumSizeHint() const
 {
-	return QSize(diamX_, diamY_);
+    return QSize(m_diamX, m_diamY);
 }
 
 void LED::
@@ -146,46 +174,52 @@ paintEvent(QPaintEvent *event)
 
 	QPainter p(this);
 
+    //return; // this is for transparency
+
 	QRect geo = geometry();
 	int width = geo.width();
 	int height = geo.height();
 
 	int x=0, y=0;
-	if ( alignment_ & Qt::AlignLeft )
+    if ( m_alignment & Qt::AlignLeft )
 		x = 0;
-	else if ( alignment_ & Qt::AlignRight )
-		x = width-diamX_;
-	else if ( alignment_ & Qt::AlignHCenter )
-		x = (width-diamX_)/2;
-	else if ( alignment_ & Qt::AlignJustify )
+    else if ( m_alignment & Qt::AlignRight )
+        x = width-m_diamX;
+    else if ( m_alignment & Qt::AlignHCenter )
+        x = (width-m_diamX)/2;
+    else if ( m_alignment & Qt::AlignJustify )
 		x = 0;
 
-	if ( alignment_ & Qt::AlignTop )
+    if ( m_alignment & Qt::AlignTop )
 		y = 0;
-	else if ( alignment_ & Qt::AlignBottom )
-		y = height-diamY_;
-	else if ( alignment_ & Qt::AlignVCenter )
-		y = (height-diamY_)/2;
+    else if ( m_alignment & Qt::AlignBottom )
+        y = height-m_diamY;
+    else if ( m_alignment & Qt::AlignVCenter )
+        y = (height-m_diamY)/2;
 
-	QRadialGradient g(x+diamX_/2, y+diamY_/2, diamX_*0.4,
-		diamX_*0.4, diamY_*0.4);
+    QRadialGradient g(x+m_diamX/2, y+m_diamY/2, m_diamX*0.4,
+        m_diamX*0.4, m_diamY*0.4);
 
 	g.setColorAt(0, Qt::white);
 	if ( state_ )
-		g.setColorAt(1, color_);
+        g.setColorAt(1, m_color);
 	else
-		g.setColorAt(1, Qt::black);
+    {
+        QColor tmpColor = m_color;
+         tmpColor.setAlpha(m_alphaForOff);
+        g.setColorAt(1, tmpColor);
+    }
 	QBrush brush(g);
 
-	p.setPen(color_);
+    p.setPen(m_color);
 	p.setRenderHint(QPainter::Antialiasing, true);
 	p.setBrush(brush);
-	p.drawEllipse(x, y, diamX_-1, diamY_-1);
+    p.drawEllipse(x, y, m_diamX-1, m_diamY-1);
 
-	if ( flashRate_ > 0 && flashing_ )
-		timer_->start(flashRate_);
+    if ( m_flashRate > 0 && m_flashing )
+        m_timer->start(m_flashRate);
 	else
-		timer_->stop();
+        m_timer->stop();
 }
 
 bool LED::
@@ -197,11 +231,17 @@ state() const
 bool LED::
 isFlashing() const
 {
-    return flashing_;
+    return m_flashing;
 }
     
 int LED::
 flashRate() const
 {
-    return flashRate_;
+    return m_flashRate;
+}
+
+
+int LED::alphaForOff() const
+{
+    return m_alphaForOff;
 }

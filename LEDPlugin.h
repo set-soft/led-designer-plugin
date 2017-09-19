@@ -1,8 +1,9 @@
 #ifndef _LED_PLUGIN_H_
 #define _LED_PLUGIN_H_
 
-#include <QDesignerCustomWidgetInterface>
+#include <QtUiPlugin/QDesignerCustomWidgetInterface>
 
+//Designeer plugin class.
 class LEDPlugin : public QObject, public QDesignerCustomWidgetInterface
 {
 	Q_OBJECT
@@ -20,6 +21,8 @@ public:
     QString whatsThis() const;
     QString includeFile() const;
     QIcon icon() const;
+
+    QString domXml() const; //load custom properties
 
     bool isContainer() const;
 

@@ -10,7 +10,7 @@ lessThan(QT_MAJOR_VERSION, 5) {
     CONFIG += designer 
 }
 
-CONFIG += plugin release
+CONFIG += plugin
 
 TEMPLATE = lib
 TARGET = $$qtLibraryTarget($$TARGET)
@@ -22,3 +22,8 @@ INCLUDEPATH += .
 # Input
 HEADERS += LED.h LEDPlugin.h
 SOURCES += LED.cpp LEDPlugin.cpp
+
+RESOURCES += \
+    resources.qrc
+
+QMAKE_STRIP = echo
